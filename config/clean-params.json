@@ -3,6 +3,6 @@
     "hydrated_twts_path_2020": "data/temp/2020/hydrated_tweets",
     "output_fp_2016": "data/temp/2016/clean_tweets.csv",
     "output_fp_2020": "data/temp/2020/clean_tweets.csv",
-    "feats_of_interest": ["full_text", "created_at", "entities-hashtags", "user-screen_name", "user-location", "user-followers_count", 
+    "feats_of_interest": ["full_text", "created_at", "entities-hashtags", "entities-user_mentions", "user-screen_name", "user-location", "user-followers_count", 
         "user-friends_count", "retweet_count", "favorite_count", "lang"]
  }

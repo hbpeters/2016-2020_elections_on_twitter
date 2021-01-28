@@ -10,7 +10,9 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_fp_2016,
         onefile_hashtags = get_feats(hydrated_twts_path_2016 + "/" + f, feats_of_interest)
         all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
     clean = pd.read_json(json.dumps(all_days), orient='index', convert_axes=False)
-    #Replace nan with a string containing an empty list
+    # Convert text to lowercase
+    clean['full_text'] = clean['full_text'].apply(lambda x: str(x).lower())
+    # Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
 
     clean.to_csv(output_fp_2016, index_label="tweet_id")
@@ -21,6 +23,8 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_fp_2016,
         onefile_hashtags = get_feats(hydrated_twts_path_2020 + "/" + f, feats_of_interest)
         all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
     clean = pd.read_json(json.dumps(all_days), orient='index', convert_axes=False)
+    # Convert text to lowercase
+    clean['full_text'] = clean['full_text'].apply(lambda x: str(x).lower())
     #Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
 
@@ -61,7 +65,9 @@ def get_feats(filepath, feats_of_interest):
                         final_key = feat[i]
                         this_elem = this_elem[final_key]
                         if feat[i] == "hashtags": # Treat "hashtags" list differently
-                            this_elem= [dictionary['text'] for dictionary in this_elem if 'text' in dictionary]
+                            this_elem = [dictionary['text'].lower() for dictionary in this_elem if 'text' in dictionary] # convert hashtags to lowercase in process
+                        if feat[i] == "user_mentions": # Treat "user_mentions" list differently
+                            this_elem = [dictionary['screen_name'] for dictionary in this_elem if 'screen_name' in dictionary]
                         final_val = this_elem
                 else: # Key is not nested
                     final_key = feat[0]
