@@ -6,6 +6,7 @@ sys.path.insert(0, 'src')
 
 from etl import get_data
 from clean import clean_data
+from compute import analyze
 
 def main(targets):
     if 'data' in targets:
@@ -17,6 +18,11 @@ def main(targets):
         with open('config/clean-params.json') as fh:
             clean_cfg = json.load(fh)
         clean_data(**clean_cfg)
+
+    if 'compute' in targets:
+        with open('config/compute-params.json') as fh:
+            compute_cfg = json.load(fh)
+        analyze(**compute_cfg)
 
     return
 

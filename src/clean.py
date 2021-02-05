@@ -3,7 +3,8 @@ import pandas as pd
 import json
 import numpy as np
 
-def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_fp_2016, output_fp_2020, feats_of_interest):
+def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016, output_dir_2020, feats_of_interest):
+    os.system("mkdir " + output_dir_2016)
     # Clean 2016 data
     all_days = {}
     for f in os.listdir(hydrated_twts_path_2016): # Loop through files day by day
@@ -15,10 +16,11 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_fp_2016,
     # Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
 
-    clean.to_csv(output_fp_2016, index_label="tweet_id")
+    clean.to_csv(output_dir_2016 + "/clean_tweets.csv", index_label="tweet_id")
 
     # Clean 2020 data
     all_days = {}
+    os.system("mkdir " + output_dir_2020)
     for f in os.listdir(hydrated_twts_path_2020): # Loop through files day by day
         onefile_hashtags = get_feats(hydrated_twts_path_2020 + "/" + f, feats_of_interest)
         all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
@@ -28,7 +30,7 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_fp_2016,
     #Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
 
-    clean.to_csv(output_fp_2020, index_label="tweet_id")
+    clean.to_csv(output_fp_2020 + "/clean_tweets.csv", index_label="tweet_id")
     return
 
 
@@ -38,7 +40,6 @@ def get_tweets(filename):
         with open(filename) as fh:
             for tweet in fh:
                 yield json.loads(tweet)
-
 
 
 def get_feats(filepath, feats_of_interest):
