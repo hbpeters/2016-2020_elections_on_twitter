@@ -1,1 +1,5 @@
 twarc
+textblob
+pandas
+ast
+requests
