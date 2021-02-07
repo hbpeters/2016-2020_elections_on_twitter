@@ -34,14 +34,8 @@ def main(targets):
             compute_cfg = json.load(fh)
         analyze(**compute_cfg)
 
-        # #compute target
-        # with open('config/test-compute.json') as fh:
-        #     compute_cfg = json.load(fh)
-        # compute_polarities(**compute_cfg)
-
-        # convert_notebook(**eda_cfg)
-
     return
+
 
 if __name__ == '__main__':
     targets = sys.argv[1:]

@@ -16,7 +16,6 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016
     # Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
     
-
     clean.to_csv(output_dir_2016 + "/clean_tweets.csv", index_label="tweet_id")
 
     # Clean 2020 data

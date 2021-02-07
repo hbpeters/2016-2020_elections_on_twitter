@@ -17,9 +17,23 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
 
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
+    print('##### 2016 #####')
+    print(str(len(l_16)) + " left-leaning tweets")
+    print(str(len(r_16)) + " right-leaning tweets")
+    print(str(len(l_l_dialogue_16)) +  " instances of L-L dialogue")
+    print(str(len(l_r_dialogue_16)) +  " instances of L-R dialogue")
+    print(str(len(r_l_dialogue_16)) +  " instances of R-L dialogue")
+    print(str(len(r_r_dialogue_16)) +  " instances of R-R dialogue")
 
     l_20, r_20 = get_l_and_r(twenty, l_htags_20, r_htags_20, left_users, right_users)
     l_l_dialogue_20, l_r_dialogue_20, mentioned_by_l_20, r_l_dialogue_20, r_r_dialogue_20, mentioned_by_r_20 = get_dialogue(l_20, r_20, left_users, right_users)
+    print('##### 2020 #####')
+    print(str(len(l_20)) + " left-leaning tweets")
+    print(str(len(r_20)) + " right-leaning tweets")
+    print(str(len(l_l_dialogue_20)) +  " instances of L-L dialogue")
+    print(str(len(l_r_dialogue_20)) +  " instances of L-R dialogue")
+    print(str(len(r_l_dialogue_20)) +  " instances of R-L dialogue")
+    print(str(len(r_r_dialogue_20)) +  " instances of R-R dialogue")
 
 
 def get_top_n_hashtags(clean, top_n):

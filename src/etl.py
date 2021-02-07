@@ -13,7 +13,7 @@ def get_data(dates_path, start_date_2016, end_date_2016, start_date_2020, end_da
     os.system("mkdir " + tweet_dir + "/2020/tweet_ids")
     os.system("mkdir " + tweet_dir + "/2020/hydrated_tweets")
     
-    # get_2016_data(tweet_dir, filenames_2016, sample_prop)
+    get_2016_data(raw_data_dir, tweet_dir, filenames_2016, sample_prop)
     get_2020_data(tweet_dir, start_date_2020, end_date_2020, sample_prop)
     return
 
@@ -47,13 +47,11 @@ def get_2020_data(tweet_dir, start_date, end_date, sample_prop):
         hours = pd.date_range(start_day, end_day, freq="H").tolist()[:-1]
         month_folder = BASE_REPO_2020 + start_day[:7] + "/"
         # os.system("mkdir " + tweet_dir + "/2020/tweet_ids/" + start_day[:7])
-        # print(hours)
         for this_hour in hours:
             hour = str(this_hour.hour)
             if len(hour) == 1:
                 hour = "0" + hour
             hour_str = str(this_hour.date()) + "-" + hour
-            # month_folder = BASE_REPO_2020 + start_day[:7] + "/"
             url = month_folder + "us-presidential-tweet-id-" + hour_str + ".txt"
             resp_txt = requests.get(url).text # Get ids for this day
             twt_ids = np.array(resp_txt.split('\n'))[:-1]
@@ -95,7 +93,7 @@ def get_2020_data(tweet_dir, start_date, end_date, sample_prop):
         os.system("twarc hydrate " + ids_dir + start_day[:7] + "_tweet_ids.txt > " + hydrated_dir + start_day[:7] + "_hydrated.jsonl")
     return
 
-def get_2016_data(tweet_dir, filenames_2016, sample_prop):
+def get_2016_data(raw_data_dir, tweet_dir, filenames_2016, sample_prop):
     tweet_dir += "/2016/"
     ids_dir = tweet_dir + "/tweet_ids/"
     hydrated_dir = tweet_dir + "/hydrated_tweets/"
