@@ -1,0 +1,8 @@
+{
+    "hydrated_twts_path_2016": "test/testdata/temp/2016/hydrated_tweets",
+    "hydrated_twts_path_2020": "test/testdata/temp/2020/hydrated_tweets",
+    "output_dir_2016": "test/testdata/temp/2016/clean",
+    "output_dir_2020": "test/testdata/temp/2020/clean",
+    "feats_of_interest": ["full_text", "created_at", "entities-hashtags", "entities-user_mentions", "user-screen_name", "user-location", "user-followers_count", 
+        "user-friends_count", "retweet_count", "lang"]
+ }

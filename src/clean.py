@@ -15,6 +15,7 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016
     clean['full_text'] = clean['full_text'].apply(lambda x: str(x).lower())
     # Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
+    
 
     clean.to_csv(output_dir_2016 + "/clean_tweets.csv", index_label="tweet_id")
 
@@ -30,7 +31,7 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016
     #Replace nan with a string containing an empty list
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
 
-    clean.to_csv(output_fp_2020 + "/clean_tweets.csv", index_label="tweet_id")
+    clean.to_csv(output_dir_2020 + "/clean_tweets.csv", index_label="tweet_id")
     return
 
 

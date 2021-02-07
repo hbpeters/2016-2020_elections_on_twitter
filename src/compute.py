@@ -4,14 +4,15 @@ import warnings
 warnings.filterwarnings('ignore')
 
 def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_20, left_users, right_users):
-    six = pd.read_csv(fp_16_data, index_col=0)
-    twenty = pd.read_csv(fp_20_data, index_col=0)
-    # Sentiment analysis
+    six = pd.read_csv(fp_16_data)
+    twenty = pd.read_csv(fp_20_data)
+
+    #### Call function for Sentiment analysis ####
 
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
-    l_20, r_20 = get_l_and_r(twenty, l_htags_20, r_htags_20, left_users, right_users)
-
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
+
+    l_20, r_20 = get_l_and_r(twenty, l_htags_20, r_htags_20, left_users, right_users)
     l_l_dialogue_20, l_r_dialogue_20, mentioned_by_l_20, r_l_dialogue_20, r_r_dialogue_20, mentioned_by_r_20 = get_dialogue(l_20, r_20, left_users, right_users)
 
 
@@ -70,9 +71,7 @@ def get_l_and_r(df, l_htags, r_htags, left_users, right_users):
     r_users = r_users + right_users
     # Get all tweets by these users
     left = get_twts_for_users(df, l_users)
-    print("# left-leaning tweets:", len(left))
     right = get_twts_for_users(df, r_users)
-    print("# right-leaning tweets:", len(right))
     
     # Assign leanings
     left['leaning'] = 'L'
