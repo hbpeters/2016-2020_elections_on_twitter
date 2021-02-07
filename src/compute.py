@@ -10,10 +10,10 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     twenty = pd.read_csv(fp_20_data)
 
     #### Call function for Sentiment analysis ####
-    fp_16_data['tweetPolarity'] = fp_16_data['full_text'].apply(sentiment_polarity)
-    fp_20_data['tweetPolarity'] = fp_20_data['full_text'].apply(sentiment_polarity)
-    fp_16_data['tweetSubjectivity'] = fp_16_data['full_text'].apply(sentiment_subjectivity)
-    fp_20_data['tweetSubjectivity'] = fp_20_data['full_text'].apply(sentiment_subjectivity)
+    six['tweetPolarity'] = six['full_text'].apply(sentiment_polarity)
+    twenty['tweetPolarity'] = twenty['full_text'].apply(sentiment_polarity)
+    six['tweetSubjectivity'] = six['full_text'].apply(sentiment_subjectivity)
+    twenty['tweetSubjectivity'] = twenty['full_text'].apply(sentiment_subjectivity)
 
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
