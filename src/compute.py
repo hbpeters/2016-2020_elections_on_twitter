@@ -1,6 +1,8 @@
 import pandas as pd
 import ast
 import warnings
+from textblob import TextBlob
+
 warnings.filterwarnings('ignore')
 
 def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_20, left_users, right_users):
@@ -8,6 +10,10 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     twenty = pd.read_csv(fp_20_data)
 
     #### Call function for Sentiment analysis ####
+    fp_16_data['tweetPolarity'] = fp_16_data['full_text'].apply(sentiment_polarity)
+    fp_20_data['tweetPolarity'] = fp_20_data['full_text'].apply(sentiment_polarity)
+    fp_16_data['tweetSubjectivity'] = fp_16_data['full_text'].apply(sentiment_subjectivity)
+    fp_20_data['tweetSubjectivity'] = fp_20_data['full_text'].apply(sentiment_subjectivity)
 
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
@@ -38,6 +44,15 @@ def search_keywords(df, col, keywords):
 def get_twts_for_users(df, user_list):
     return df[df['screen_name'].isin(user_list)]
 
+def sentiment_polarity(text):
+    blob = TextBlob(text) 
+    polar = blob.sentiment.polarity
+    return polar
+
+def sentiment_subjectivity(text):
+    blob = TextBlob(text) 
+    sub = blob.sentiment.subjectivity
+    return sub
 
 def filter_by_kwords_and_usrs(df, keywords, users):
     "Get tweets that contain at least one keyword from a list of keywords or are by one of the listed users"
