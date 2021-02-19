@@ -2,6 +2,9 @@ import pandas as pd
 import ast
 import warnings
 from textblob import TextBlob
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+import os
 
 warnings.filterwarnings('ignore')
 
@@ -9,11 +12,11 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     six = pd.read_csv(fp_16_data)
     twenty = pd.read_csv(fp_20_data)
 
-    #### Call function for Sentiment analysis ####
-    six['tweetPolarity'] = six['full_text'].apply(sentiment_polarity)
-    twenty['tweetPolarity'] = twenty['full_text'].apply(sentiment_polarity)
-    six['tweetSubjectivity'] = six['full_text'].apply(sentiment_subjectivity)
-    twenty['tweetSubjectivity'] = twenty['full_text'].apply(sentiment_subjectivity)
+    # Sentiment analysis
+    six['polarity'], six['subjectivity'] = zip(*six['full_text'].map(sentiment_analysis))
+    twenty['polarity'], twenty['subjectivity'] = zip(*twenty['full_text'].map(sentiment_analysis))
+    # six.to_csv(fp_16_data, index_label="tweet_id")
+    # twenty.to_csv(fp_20_data, index_label="tweet_id")
 
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
@@ -35,6 +38,17 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     print(str(len(r_l_dialogue_20)) +  " instances of R-L dialogue")
     print(str(len(r_r_dialogue_20)) +  " instances of R-R dialogue")
 
+    # Make directory to save plots to
+    plot_dir = fp_16_data[:10] + "plots"
+    os.system("mkdir " + plot_dir)
+
+    # Generate histograms for subjectivity and polarity
+    plot_for_year("2016", "polarity", six, l_16, r_16, l_l_dialogue_16, l_r_dialogue_16, r_l_dialogue_16, r_r_dialogue_16, plot_dir)
+    plot_for_year("2016", "subjectivity", six, l_16, r_16, l_l_dialogue_16, l_r_dialogue_16, r_l_dialogue_16, r_r_dialogue_16, plot_dir)
+    plot_for_year("2020", "polarity", twenty, l_20, r_20, l_l_dialogue_20, l_r_dialogue_20, r_l_dialogue_20, r_r_dialogue_20, plot_dir)
+    plot_for_year("2020", "subjectivity", twenty, l_20, r_20, l_l_dialogue_20, l_r_dialogue_20, r_l_dialogue_20, r_r_dialogue_20, plot_dir)
+    return
+
 
 def get_top_n_hashtags(clean, top_n):
     non_hashtags = clean['hashtags'].loc[clean['hashtags'].str.startswith("[") != True]
@@ -48,6 +62,13 @@ def get_top_n_hashtags(clean, top_n):
     return top_n_hashtags
 
 
+def sentiment_analysis(text):
+    blob = TextBlob(text) 
+    polar = blob.sentiment.polarity
+    sub = blob.sentiment.subjectivity
+    return polar, sub
+
+
 def search_keywords(df, col, keywords):
     "Selects subset of df that contains at least one of the keywords in the specified col"
     pattern = '|'.join(keywords)
@@ -58,15 +79,6 @@ def search_keywords(df, col, keywords):
 def get_twts_for_users(df, user_list):
     return df[df['screen_name'].isin(user_list)]
 
-def sentiment_polarity(text):
-    blob = TextBlob(text) 
-    polar = blob.sentiment.polarity
-    return polar
-
-def sentiment_subjectivity(text):
-    blob = TextBlob(text) 
-    sub = blob.sentiment.subjectivity
-    return sub
 
 def filter_by_kwords_and_usrs(df, keywords, users):
     "Get tweets that contain at least one keyword from a list of keywords or are by one of the listed users"
@@ -142,3 +154,37 @@ def get_dialogue(left, right, left_users, right_users):
     l_l_dialogue, l_r_dialogue, mentioned_by_l = classify_dialogue(left)
     r_l_dialogue, r_r_dialogue, mentioned_by_r = classify_dialogue(right)
     return l_l_dialogue, l_r_dialogue, mentioned_by_l, r_l_dialogue, r_r_dialogue, mentioned_by_r
+
+
+def plot_for_year(year, elem, df, left, right, l_to_l, l_to_r, r_to_l, r_to_r, out_dir):
+    figure(num=None, figsize=(20, 20), dpi=150)
+    plt.subplot(4, 1, 1)
+    plt.hist(df[elem], bins=20, color="#8968CB")
+    plt.title(year + " - " + elem)
+
+    plt.subplot(4, 2, 3)
+    plt.hist(left[elem], bins=20)
+    plt.title("Left")
+
+    plt.subplot(4, 2, 4)
+    plt.hist(right[elem], bins=20, color="#F74242")
+    plt.title("Right")
+
+    plt.subplot(4, 4, 9)
+    plt.hist(l_to_l[elem], bins=20)
+    plt.title("Dialogue: L to L")
+
+    plt.subplot(4, 4, 10)
+    plt.hist(l_to_r[elem], bins=20)
+    plt.title("Dialogue: L to R")
+
+    plt.subplot(4, 4, 11)
+    plt.hist(r_to_l[elem], bins=20, color="#F74242")
+    plt.title("Dialogue: R to L")
+
+    plt.subplot(4, 4, 12)
+    plt.hist(r_to_r[elem], bins=20, color="#F74242")
+    plt.title("Dialogue: R to R")
+
+    plt.savefig(out_dir + "/" + year + "_" + elem + '_dists.png')
+    return
