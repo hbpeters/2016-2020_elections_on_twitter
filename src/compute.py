@@ -17,9 +17,19 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     twenty['polarity'], twenty['subjectivity'] = zip(*twenty['full_text'].map(sentiment_analysis))
     # six.to_csv(fp_16_data, index_label="tweet_id")
     # twenty.to_csv(fp_20_data, index_label="tweet_id")
+    
+    #permutation test
+    compare_polarities = permutation_test(six['polarity'],twenty['polarity'], 0.1)
+    compare_subjectivities = permutation_test(six['subjectivity'],twenty['subjectivity'], 0.1)
 
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
+    
+    l_16['polarity'], l_16['subjectivity'] = zip(*l_16['full_text'].map(sentiment_analysis))
+    l_20['polarity'], l_20['subjectivity'] = zip(*l_20['full_text'].map(sentiment_analysis))
+    r_16['polarity'], r_16['subjectivity'] = zip(*r_16['full_text'].map(sentiment_analysis))
+    r_20['polarity'], r_20['subjectivity'] = zip(*r_20['full_text'].map(sentiment_analysis))
+    
     print('##### 2016 #####')
     print(str(len(l_16)) + " left-leaning tweets")
     print(str(len(r_16)) + " right-leaning tweets")
@@ -37,6 +47,14 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     print(str(len(l_r_dialogue_20)) +  " instances of L-R dialogue")
     print(str(len(r_l_dialogue_20)) +  " instances of R-L dialogue")
     print(str(len(r_r_dialogue_20)) +  " instances of R-R dialogue")
+    
+    #permutation tests
+    left_analysis_polarity = permutation_test(l_16['polarity'],l_20['polarity'], 0.1)
+    left_analysis_subjectivity = permutation_test(l_16['subjectivity'],l_20['subjectivity'], 0.1)
+    
+    right_analysis_polarity = permutation_test(r_16['polarity'],r_20['polarity'], 0.1)
+    right_analysis_subjectivity = permutation_test(r_16['subjectivity'],r_20['subjectivity'], 0.1)
+    
 
     # Make directory to save plots to
     plot_dir = fp_16_data[:10] + "plots"
@@ -67,6 +85,30 @@ def sentiment_analysis(text):
     polar = blob.sentiment.polarity
     sub = blob.sentiment.subjectivity
     return polar, sub
+
+
+def permutation_test(col16, col20, sig_level):
+    observed_diff = np.abs(col20.mean() - col16.mean())
+    all_vals = list(col16) + list(col20)
+    len_16 = len(col16)
+    pD = []
+    p=1000
+    for i in range(0,p):
+        random.shuffle(all_vals)
+        pD.append(np.abs(np.average(all_vals[0:len_16]) - np.average(all_vals[len_16:])))
+    n_greater_equal = 0
+    for i in range(0,p):
+        if pD[i] >= observed_diff:
+            n_greater_equal = n_greater_equal + 1
+            
+    p_val = n_greater_equal/p
+    result = p_val < sig_level
+    if result == True:
+        mesg = "Pvalue is less than the significance level so we must reject the null hypothesis"
+    else:
+        mesg = "Pvalue is greater than the significance level so we must accept the null hypothesis"
+        
+    return(mesg, " The pvalue is: {0}".format(p_val))
 
 
 def search_keywords(df, col, keywords):
