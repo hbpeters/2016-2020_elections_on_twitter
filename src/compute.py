@@ -5,31 +5,41 @@ from textblob import TextBlob
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import os
+import numpy as np
+import random
 
 warnings.filterwarnings('ignore')
 
 def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_20, left_users, right_users):
+    # SMALL_SIZE = 6
+    # MEDIUM_SIZE = 8
+    # BIGGER_SIZE = 12
+
+    # plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+    # plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+    # plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    # plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+    # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+    # plt.rcParams['axes.linewidth'] = 0.5    
+
     six = pd.read_csv(fp_16_data)
     twenty = pd.read_csv(fp_20_data)
+    six['full_text_orig'] = six.full_text
+    six['full_text'] = six['full_text'].apply(lambda x: str(x).lower()) 
+    twenty['full_text_orig'] = twenty.full_text
+    twenty['full_text'] = twenty['full_text'].apply(lambda x: str(x).lower()) 
 
     # Sentiment analysis
     six['polarity'], six['subjectivity'] = zip(*six['full_text'].map(sentiment_analysis))
     twenty['polarity'], twenty['subjectivity'] = zip(*twenty['full_text'].map(sentiment_analysis))
-    # six.to_csv(fp_16_data, index_label="tweet_id")
-    # twenty.to_csv(fp_20_data, index_label="tweet_id")
+    six.to_csv(fp_16_data)
+    twenty.to_csv(fp_20_data)
     
-    #permutation test
-    compare_polarities = permutation_test(six['polarity'],twenty['polarity'], 0.1)
-    compare_subjectivities = permutation_test(six['subjectivity'],twenty['subjectivity'], 0.1)
-
+    # Separate into L and R and classify dialogue
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
     l_l_dialogue_16, l_r_dialogue_16, mentioned_by_l_16, r_l_dialogue_16, r_r_dialogue_16, mentioned_by_r_16 = get_dialogue(l_16, r_16, left_users, right_users)
-    
-    l_16['polarity'], l_16['subjectivity'] = zip(*l_16['full_text'].map(sentiment_analysis))
-    l_20['polarity'], l_20['subjectivity'] = zip(*l_20['full_text'].map(sentiment_analysis))
-    r_16['polarity'], r_16['subjectivity'] = zip(*r_16['full_text'].map(sentiment_analysis))
-    r_20['polarity'], r_20['subjectivity'] = zip(*r_20['full_text'].map(sentiment_analysis))
-    
     print('##### 2016 #####')
     print(str(len(l_16)) + " left-leaning tweets")
     print(str(len(r_16)) + " right-leaning tweets")
@@ -48,23 +58,83 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     print(str(len(r_l_dialogue_20)) +  " instances of R-L dialogue")
     print(str(len(r_r_dialogue_20)) +  " instances of R-R dialogue")
     
-    #permutation tests
-    left_analysis_polarity = permutation_test(l_16['polarity'],l_20['polarity'], 0.1)
-    left_analysis_subjectivity = permutation_test(l_16['subjectivity'],l_20['subjectivity'], 0.1)
-    
-    right_analysis_polarity = permutation_test(r_16['polarity'],r_20['polarity'], 0.1)
-    right_analysis_subjectivity = permutation_test(r_16['subjectivity'],r_20['subjectivity'], 0.1)
-    
-
     # Make directory to save plots to
     plot_dir = fp_16_data[:10] + "plots"
     os.system("mkdir " + plot_dir)
 
-    # Generate histograms for subjectivity and polarity
-    plot_for_year("2016", "polarity", six, l_16, r_16, l_l_dialogue_16, l_r_dialogue_16, r_l_dialogue_16, r_r_dialogue_16, plot_dir)
-    plot_for_year("2016", "subjectivity", six, l_16, r_16, l_l_dialogue_16, l_r_dialogue_16, r_l_dialogue_16, r_r_dialogue_16, plot_dir)
-    plot_for_year("2020", "polarity", twenty, l_20, r_20, l_l_dialogue_20, l_r_dialogue_20, r_l_dialogue_20, r_r_dialogue_20, plot_dir)
-    plot_for_year("2020", "subjectivity", twenty, l_20, r_20, l_l_dialogue_20, l_r_dialogue_20, r_l_dialogue_20, r_r_dialogue_20, plot_dir)
+    for metric in ['polarity', 'subjectivity']:
+        # Generate histograms of distributions
+        plot_for_year("2016", metric, six, l_16, r_16, l_l_dialogue_16, l_r_dialogue_16, r_l_dialogue_16, r_r_dialogue_16, plot_dir)
+        plot_for_year("2020", metric, twenty, l_20, r_20, l_l_dialogue_20, l_r_dialogue_20, r_l_dialogue_20, r_r_dialogue_20, plot_dir)
+
+        ## Permutation testing
+        figure(num=None, figsize=(20, 20), dpi=150)
+
+        # Overall
+        observed_diff, pD, p_val = permutation_test(six[metric], twenty[metric])
+        plt.subplot(4, 1, 1)
+        plt.hist(pD, bins=20, color="#8968CB")
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("2016 vs. 2020 " + metric[0].upper() + metric[1:])
+        print("2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        # Left
+        observed_diff, pD, p_val = permutation_test(l_16[metric], l_20[metric])
+        plt.subplot(4, 2, 3)
+        plt.hist(pD, bins=20)
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("Left")
+        print("Left 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        # Right
+        observed_diff, pD, p_val = permutation_test(r_16[metric], r_20[metric])
+        plt.subplot(4, 2, 4)
+        plt.hist(pD, bins=20, color="#F74242")
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("Right")
+        print("Right 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        # L-L dialogue
+        observed_diff, pD, p_val = permutation_test(l_l_dialogue_16[metric], l_l_dialogue_20[metric])
+        plt.subplot(4, 4, 9)
+        plt.hist(pD, bins=20)
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("Dialogue: L to L")
+        print("L-L Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        # L-R dialogue
+        observed_diff, pD, p_val = permutation_test(l_r_dialogue_16[metric], l_r_dialogue_20[metric])
+        plt.subplot(4, 4, 10)
+        plt.hist(pD, bins=20)
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("Dialogue: L to R")
+        print("L-R Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        # R-L dialogue
+        observed_diff, pD, p_val = permutation_test(r_l_dialogue_16[metric], r_l_dialogue_20[metric])
+        plt.subplot(4, 4, 11)
+        plt.hist(pD, bins=20, color="#F74242")
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("Dialogue: R to L")
+        print("R-L Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        # R-R dialogue
+        observed_diff, pD, p_val = permutation_test(r_r_dialogue_16[metric], r_r_dialogue_20[metric])
+        plt.subplot(4, 4, 12)
+        plt.hist(pD, bins=20, color="#F74242")
+        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.xlabel("Difference in Means")
+        plt.title("Dialogue: R to R")
+        print("R-R Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
+
+        plt.savefig(plot_dir + "/" + metric + "_" + 'permutation_tests.png')
+
     return
 
 
@@ -87,34 +157,29 @@ def sentiment_analysis(text):
     return polar, sub
 
 
-def permutation_test(col16, col20, sig_level):
-    observed_diff = np.abs(col20.mean() - col16.mean())
+def permutation_test(col16, col20):
+    observed_diff = col20.mean() - col16.mean()
+    observed_diff_abs = np.abs(observed_diff)
     all_vals = list(col16) + list(col20)
     len_16 = len(col16)
-    pD = []
-    p=1000
-    for i in range(0,p):
-        random.shuffle(all_vals)
-        pD.append(np.abs(np.average(all_vals[0:len_16]) - np.average(all_vals[len_16:])))
     n_greater_equal = 0
-    for i in range(0,p):
-        if pD[i] >= observed_diff:
+    num_trials = 1000
+    pD = [0]*num_trials
+    for i in range(0, num_trials):
+        random.shuffle(all_vals)
+        diff = np.abs(np.average(all_vals[0:len_16]) - np.average(all_vals[len_16:]))
+        pD[i] = diff
+        if diff >= observed_diff_abs:
             n_greater_equal = n_greater_equal + 1
-            
-    p_val = n_greater_equal/p
-    result = p_val < sig_level
-    if result == True:
-        mesg = "Pvalue is less than the significance level so we must reject the null hypothesis"
-    else:
-        mesg = "Pvalue is greater than the significance level so we must accept the null hypothesis"
-        
-    return(mesg, " The pvalue is: {0}".format(p_val))
+
+    p_val = n_greater_equal/num_trials
+    return observed_diff, pD, p_val
 
 
 def search_keywords(df, col, keywords):
     "Selects subset of df that contains at least one of the keywords in the specified col"
     pattern = '|'.join(keywords)
-    df = df[df[col].str.contains(pattern)]
+    df = df[df[col].str.contains(pattern, na=False)]
     return df
 
 
@@ -155,10 +220,7 @@ def get_l_and_r(df, l_htags, r_htags, left_users, right_users):
     # Get all tweets by these users
     left = get_twts_for_users(df, l_users)
     right = get_twts_for_users(df, r_users)
-    
-    # Assign leanings
-    left['leaning'] = 'L'
-    right['leaning'] = 'R'
+
     return left, right
 
 

@@ -3,7 +3,8 @@ import pandas as pd
 import json
 import numpy as np
 
-def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016, output_dir_2020, feats_of_interest):
+
+def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016, output_dir_2020, feats_of_interest, keywords_2016, keywords_2020, users):
     os.system("mkdir " + output_dir_2016)
     # Clean 2016 data
     all_days = {}
@@ -11,26 +12,63 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016
         onefile_hashtags = get_feats(hydrated_twts_path_2016 + "/" + f, feats_of_interest)
         all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
     clean = pd.read_json(json.dumps(all_days), orient='index', convert_axes=False)
-    # Convert text to lowercase
-    clean['full_text'] = clean['full_text'].apply(lambda x: str(x).lower())
-    # Replace nan with a string containing an empty list
-    clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
-    
-    clean.to_csv(output_dir_2016 + "/clean_tweets.csv", index_label="tweet_id")
+
+    clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]') # Replace nan with a string containing an empty list
+    clean.to_csv(output_dir_2016 + "/clean_tweets.csv")
 
     # Clean 2020 data
     all_days = {}
     os.system("mkdir " + output_dir_2020)
     for f in os.listdir(hydrated_twts_path_2020): # Loop through files day by day
+        print(f)
+        # all_days = {}
         onefile_hashtags = get_feats(hydrated_twts_path_2020 + "/" + f, feats_of_interest)
-        all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
-    clean = pd.read_json(json.dumps(all_days), orient='index', convert_axes=False)
-    # Convert text to lowercase
-    clean['full_text'] = clean['full_text'].apply(lambda x: str(x).lower())
-    #Replace nan with a string containing an empty list
-    clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]')
+        # all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
+        if onefile_hashtags == {}:
+            continue
+        clean = pd.read_json(json.dumps(onefile_hashtags), orient='index', convert_axes=False)
+        clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]') # Replace nan with a string containing an empty list
 
-    clean.to_csv(output_dir_2020 + "/clean_tweets.csv", index_label="tweet_id")
+        clean.to_csv(output_dir_2020 + "/" + f[:8] + "clean_tweets" + ".csv")
+
+    df = pd.DataFrame()
+    for f in os.listdir(output_dir_2020):
+        if f[-9:] != ".DS_Store":
+            df = df.append(pd.read_csv(output_dir_2020 + "/" + f, index_col=0))
+    
+    filter_2020(df, output_dir_2020)
+
+    twenty = pd.read_csv(output_dir_2020 + "/clean_tweets.csv", index_col=0)
+    twenty = twenty.sample(n=500000)
+    twenty.to_csv(output_dir_2020 + "/clean_tweets.csv")
+    return
+
+
+def filter_2020(df, output_dir_2020):
+    def search_keywords(df, col, keywords):
+        "Selects subset of df that contains at least one of the keywords in the specified col"
+        pattern = '|'.join(keywords)
+        df = df[df[col].str.contains(pattern)]
+        return df
+
+    def get_twts_for_users(df, user_list):
+        return df[df['screen_name'].isin(user_list)]
+
+    def filter_by_kwords_and_users(df, keywords, users):
+        "Get tweets that contain at least one keyword from a list of keywords or are by one of the listed users"
+        filtered_kwords = search_keywords(df, 'full_text', keywords)
+        filtered_usrs = get_twts_for_users(df, users)
+        return filtered_kwords.merge(filtered_usrs, how='outer')
+
+    all_keywords = keywords_2016 + keywords_2020
+    df.dropna(subset=['full_text'], inplace=True)
+    df.rename(columns={'full_text': 'full_text_original'}, inplace=True) # save original case
+    df['full_text'] = df['full_text_original'].apply(lambda x: x.lower()) # convert to lowercase for keyword search
+    filtered_2020 = filter_by_kwords_and_users(df, all_keywords, users)
+    filtered_2020.drop(columns='full_text', inplace=True) # drop lowercase column
+    filtered_2020.rename(columns={'full_text_original': 'full_text'}, inplace=True)
+    print(filtered_2020.shape)
+    filtered_2020.to_csv(output_dir_2020 + "/clean_tweets.csv")
     return
 
 
@@ -78,4 +116,3 @@ def get_feats(filepath, feats_of_interest):
             all_twts_dict[tweet['id_str']] = this_twt_dict # Add this tweet's dictionary to dict for all tweets on this day
 
     return all_twts_dict
-    
