@@ -1,5 +1,5 @@
 twarc
-textblob
+vaderSentiment
 pandas
 ast
 requests
