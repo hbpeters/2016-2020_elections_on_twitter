@@ -14,37 +14,38 @@ def clean_data(hydrated_twts_path_2016, hydrated_twts_path_2020, output_dir_2016
     clean = pd.read_json(json.dumps(all_days), orient='index', convert_axes=False)
 
     clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]') # Replace nan with a string containing an empty list
+    clean['tweet_id'] = clean.index
     clean.to_csv(output_dir_2016 + "/clean_tweets.csv")
 
     # Clean 2020 data
     all_days = {}
     os.system("mkdir " + output_dir_2020)
     for f in os.listdir(hydrated_twts_path_2020): # Loop through files day by day
-        print(f)
-        # all_days = {}
         onefile_hashtags = get_feats(hydrated_twts_path_2020 + "/" + f, feats_of_interest)
-        # all_days = {**all_days, **onefile_hashtags} # Merge this day's dict with all_days
         if onefile_hashtags == {}:
             continue
         clean = pd.read_json(json.dumps(onefile_hashtags), orient='index', convert_axes=False)
         clean['hashtags'] = clean['hashtags'].replace(np.nan, '[]') # Replace nan with a string containing an empty list
-
-        clean.to_csv(output_dir_2020 + "/" + f[:8] + "clean_tweets" + ".csv")
+        clean['tweet_id'] = clean.index
+        clean.to_csv(output_dir_2020 + "/" + f[:8] + "clean_tweets.csv")
 
     df = pd.DataFrame()
     for f in os.listdir(output_dir_2020):
         if f[-9:] != ".DS_Store":
             df = df.append(pd.read_csv(output_dir_2020 + "/" + f, index_col=0))
     
-    filter_2020(df, output_dir_2020)
+    filter_2020(df, output_dir_2020, keywords_2016, keywords_2020, users)
 
     twenty = pd.read_csv(output_dir_2020 + "/clean_tweets.csv", index_col=0)
-    twenty = twenty.sample(n=500000)
+    try:
+        twenty = twenty.sample(n=500000)
+    except:
+        pass
     twenty.to_csv(output_dir_2020 + "/clean_tweets.csv")
     return
 
 
-def filter_2020(df, output_dir_2020):
+def filter_2020(df, output_dir_2020, keywords_2016, keywords_2020, users):
     def search_keywords(df, col, keywords):
         "Selects subset of df that contains at least one of the keywords in the specified col"
         pattern = '|'.join(keywords)
@@ -67,7 +68,6 @@ def filter_2020(df, output_dir_2020):
     filtered_2020 = filter_by_kwords_and_users(df, all_keywords, users)
     filtered_2020.drop(columns='full_text', inplace=True) # drop lowercase column
     filtered_2020.rename(columns={'full_text_original': 'full_text'}, inplace=True)
-    print(filtered_2020.shape)
     filtered_2020.to_csv(output_dir_2020 + "/clean_tweets.csv")
     return
 
@@ -114,5 +114,4 @@ def get_feats(filepath, feats_of_interest):
 
                 this_twt_dict[final_key] = final_val # Add this key, value pair to dictionary for this tweet
             all_twts_dict[tweet['id_str']] = this_twt_dict # Add this tweet's dictionary to dict for all tweets on this day
-
     return all_twts_dict

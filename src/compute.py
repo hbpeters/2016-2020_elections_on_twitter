@@ -1,7 +1,7 @@
 import pandas as pd
 import ast
 import warnings
-from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import os
@@ -10,32 +10,19 @@ import random
 
 warnings.filterwarnings('ignore')
 
-def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_20, left_users, right_users):
-    # SMALL_SIZE = 6
-    # MEDIUM_SIZE = 8
-    # BIGGER_SIZE = 12
-
-    # plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-    # plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-    # plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-    # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    # plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-    # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-    # plt.rcParams['axes.linewidth'] = 0.5    
-
+def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_20, left_users, right_users): 
     six = pd.read_csv(fp_16_data)
     twenty = pd.read_csv(fp_20_data)
-    six['full_text_orig'] = six.full_text
-    six['full_text'] = six['full_text'].apply(lambda x: str(x).lower()) 
-    twenty['full_text_orig'] = twenty.full_text
-    twenty['full_text'] = twenty['full_text'].apply(lambda x: str(x).lower()) 
 
     # Sentiment analysis
-    six['polarity'], six['subjectivity'] = zip(*six['full_text'].map(sentiment_analysis))
-    twenty['polarity'], twenty['subjectivity'] = zip(*twenty['full_text'].map(sentiment_analysis))
+    six['pos'], six['neu'], six['neg'], six['compound'] = zip(*six['full_text'].map(sentiment_analysis))
+    twenty['pos'], twenty['neu'], twenty['neg'], twenty['compound'] = zip(*twenty['full_text'].map(sentiment_analysis))
     six.to_csv(fp_16_data)
     twenty.to_csv(fp_20_data)
+
+    # Convert to lowercase for hashtag analysis
+    six['full_text'] = six['full_text'].apply(lambda x: str(x).lower()) 
+    twenty['full_text'] = twenty['full_text'].apply(lambda x: str(x).lower()) 
     
     # Separate into L and R and classify dialogue
     l_16, r_16 = get_l_and_r(six, l_htags_16, r_htags_16, left_users, right_users)
@@ -62,7 +49,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
     plot_dir = fp_16_data[:10] + "plots"
     os.system("mkdir " + plot_dir)
 
-    for metric in ['polarity', 'subjectivity']:
+    for metric in ['neu', 'compound']:
         # Generate histograms of distributions
         plot_for_year("2016", metric, six, l_16, r_16, l_l_dialogue_16, l_r_dialogue_16, r_l_dialogue_16, r_r_dialogue_16, plot_dir)
         plot_for_year("2020", metric, twenty, l_20, r_20, l_l_dialogue_20, l_r_dialogue_20, r_l_dialogue_20, r_r_dialogue_20, plot_dir)
@@ -74,7 +61,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(six[metric], twenty[metric])
         plt.subplot(4, 1, 1)
         plt.hist(pD, bins=20, color="#8968CB")
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("2016 vs. 2020 " + metric[0].upper() + metric[1:])
         print("2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -83,7 +70,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(l_16[metric], l_20[metric])
         plt.subplot(4, 2, 3)
         plt.hist(pD, bins=20)
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("Left")
         print("Left 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -92,7 +79,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(r_16[metric], r_20[metric])
         plt.subplot(4, 2, 4)
         plt.hist(pD, bins=20, color="#F74242")
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("Right")
         print("Right 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -101,7 +88,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(l_l_dialogue_16[metric], l_l_dialogue_20[metric])
         plt.subplot(4, 4, 9)
         plt.hist(pD, bins=20)
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("Dialogue: L to L")
         print("L-L Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -110,7 +97,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(l_r_dialogue_16[metric], l_r_dialogue_20[metric])
         plt.subplot(4, 4, 10)
         plt.hist(pD, bins=20)
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("Dialogue: L to R")
         print("L-R Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -119,7 +106,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(r_l_dialogue_16[metric], r_l_dialogue_20[metric])
         plt.subplot(4, 4, 11)
         plt.hist(pD, bins=20, color="#F74242")
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("Dialogue: R to L")
         print("R-L Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -128,7 +115,7 @@ def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_
         observed_diff, pD, p_val = permutation_test(r_r_dialogue_16[metric], r_r_dialogue_20[metric])
         plt.subplot(4, 4, 12)
         plt.hist(pD, bins=20, color="#F74242")
-        plt.axvline(np.abs(observed_diff), ls='--', color='r')
+        plt.axvline(observed_diff, ls='--', color='r')
         plt.xlabel("Difference in Means")
         plt.title("Dialogue: R to R")
         print("R-R Dialogue 2016 vs. 2020 " + metric + ": observed_diff = {}, p-val = {}".format(observed_diff, p_val))
@@ -151,28 +138,38 @@ def get_top_n_hashtags(clean, top_n):
 
 
 def sentiment_analysis(text):
-    blob = TextBlob(text) 
-    polar = blob.sentiment.polarity
-    sub = blob.sentiment.subjectivity
-    return polar, sub
+    analyser = SentimentIntensityAnalyzer()
+    try:
+        score = analyser.polarity_scores(text)
+        return score['pos'], score['neu'], score['neg'], score['compound']
+    except:
+        return 0, 0, 0, 0
 
 
 def permutation_test(col16, col20):
     observed_diff = col20.mean() - col16.mean()
-    observed_diff_abs = np.abs(observed_diff)
+    if np.abs(observed_diff) == observed_diff: # If a positive difference
+        pos = True
+    else:
+        pos = False
     all_vals = list(col16) + list(col20)
     len_16 = len(col16)
-    n_greater_equal = 0
+    more_extreme = 0
     num_trials = 1000
     pD = [0]*num_trials
     for i in range(0, num_trials):
         random.shuffle(all_vals)
-        diff = np.abs(np.average(all_vals[0:len_16]) - np.average(all_vals[len_16:]))
+        diff = np.average(all_vals[0:len_16]) - np.average(all_vals[len_16:])
         pD[i] = diff
-        if diff >= observed_diff_abs:
-            n_greater_equal = n_greater_equal + 1
+        # Get more extreme depending on if observed difference is positive or negative
+        if pos:
+            if diff >= observed_diff:
+                more_extreme = more_extreme + 1
+        else:
+            if diff <= observed_diff:
+                more_extreme = more_extreme + 1
 
-    p_val = n_greater_equal/num_trials
+    p_val = more_extreme/num_trials
     return observed_diff, pD, p_val
 
 
@@ -263,31 +260,31 @@ def get_dialogue(left, right, left_users, right_users):
 def plot_for_year(year, elem, df, left, right, l_to_l, l_to_r, r_to_l, r_to_r, out_dir):
     figure(num=None, figsize=(20, 20), dpi=150)
     plt.subplot(4, 1, 1)
-    plt.hist(df[elem], bins=20, color="#8968CB")
+    plt.hist(df[elem], bins=25, color="#8968CB")
     plt.title(year + " - " + elem)
 
     plt.subplot(4, 2, 3)
-    plt.hist(left[elem], bins=20)
+    plt.hist(left[elem], bins=25)
     plt.title("Left")
 
     plt.subplot(4, 2, 4)
-    plt.hist(right[elem], bins=20, color="#F74242")
+    plt.hist(right[elem], bins=25, color="#F74242")
     plt.title("Right")
 
     plt.subplot(4, 4, 9)
-    plt.hist(l_to_l[elem], bins=20)
+    plt.hist(l_to_l[elem], bins=25)
     plt.title("Dialogue: L to L")
 
     plt.subplot(4, 4, 10)
-    plt.hist(l_to_r[elem], bins=20)
+    plt.hist(l_to_r[elem], bins=25)
     plt.title("Dialogue: L to R")
 
     plt.subplot(4, 4, 11)
-    plt.hist(r_to_l[elem], bins=20, color="#F74242")
+    plt.hist(r_to_l[elem], bins=25, color="#F74242")
     plt.title("Dialogue: R to L")
 
     plt.subplot(4, 4, 12)
-    plt.hist(r_to_r[elem], bins=20, color="#F74242")
+    plt.hist(r_to_r[elem], bins=25, color="#F74242")
     plt.title("Dialogue: R to R")
 
     plt.savefig(out_dir + "/" + year + "_" + elem + '_dists.png')
