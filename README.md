@@ -8,7 +8,7 @@ This project investigates the public sentiment on Twitter regarding the 2016 and
 - Note: to get the data necessary to replicate this project, access to the Twitter API is needed
 
 ### Using `run.py`
-- This project uses publicly available 2016 and 2020 presidential election datasets located at https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/PDI7IN and https://github.com/echen102/us-pres-elections-2020. Given the 2016 dataset is not uniformly structured, you must manually download the txt files of tweet ids from the dataset's website to the directory `data/raw/2016`. The 2020 dataset can be downloaded programmatically using the `data` target, as follows
+- This project uses publicly available 2016 and 2020 presidential election datasets located at https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/PDI7IN and https://github.com/echen102/us-pres-elections-2020. Given the 2016 dataset is not uniformly structured, you must manually download the txt files of tweet ids from the dataset's website to the directory `data/raw/2016`. The 2020 dataset can be downloaded programmatically using the `data` target, as follows.
 
 - To get hydrated tweets for the 2016 and 2020 tweet ids, run the command `python run.py data`
     * This samples from the 2016 tweet ids located in `data/raw/2016` and stores them in txt files in `data/temp/2020/tweet_ids/`
@@ -21,7 +21,7 @@ This project investigates the public sentiment on Twitter regarding the 2016 and
     * The resulting csvs are stored as `clean/clean_tweets.csv` within each year's data directory.
 
 - To run the main analysis, run `python run.py compute` from the project root directory
-    * For each year, this subsets the tweets into left and right leaning, classifies the the different types of dialogue occurring and performs sentiment analysis on the various subsets of data
+    * For each year, this subsets the tweets into left and right leaning, classifies the the different types of dialogue, performs sentiment analysis on the various subsets of data, and conducts permutation testing on the subsets of the data between the two years, producing plots of the results.
     
 - To run the `clean` and `compute` targets on fake test data, run the command `python run.py test`
 
