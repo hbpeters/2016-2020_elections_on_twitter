@@ -1,4 +1,4 @@
-# Sentiment on Twitter Surrounding the 2016 and 2020 U.S. Presidential Elections
+# The Sentiment of U.S. Presidential Elections on Twitter
 This project investigates the public sentiment on Twitter regarding the 2016 and 2020 U.S. Presidential Elections. Political tensions in the United States came to a head in 2020 as people disputed President Donald Trump's handling of various major events that the year brought such as the COVID-19 pandemic and the killing of George Floyd and subsequent racial protests, and we aim to identify if this was quantifiably reflected in people's behavior on social media. To do this, we perform sentiment analysis on tweets related to the elections and conduct permutation testing to analyze how sentiment may differ between the two years and between and within politically left- and right-leaning groups of users. 
 
 
