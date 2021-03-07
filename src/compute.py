@@ -10,6 +10,18 @@ import random
 
 warnings.filterwarnings('ignore')
 
+SMALL_SIZE = 16
+MEDIUM_SIZE = 14
+BIGGER_SIZE = 20
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
 def analyze(fp_16_data, fp_20_data, l_htags_16, r_htags_16, l_htags_20, r_htags_20, left_users, right_users): 
     six = pd.read_csv(fp_16_data)
     twenty = pd.read_csv(fp_20_data)
@@ -258,6 +270,23 @@ def get_dialogue(left, right, left_users, right_users):
 
 
 def plot_for_year(year, elem, df, left, right, l_to_l, l_to_r, r_to_l, r_to_r, out_dir):
+    # if elem == "neu": # Remove scores of 1.0
+    #     df = df[df[elem] != 1]
+    #     left = left[left[elem] != 1]
+    #     right = right[right[elem] != 1]
+    #     l_to_l = l_to_l[l_to_l[elem] != 1]
+    #     l_to_r = l_to_r[l_to_r[elem] != 1]
+    #     r_to_l = r_to_l[r_to_l[elem] != 1]
+    #     r_to_r = r_to_r[r_to_r[elem] != 1]
+    # else: # remove compound scores of 0.0
+    #     df = df[df[elem] != 0]
+    #     left = left[left[elem] != 0]
+    #     right = right[right[elem] != 0]
+    #     l_to_l = l_to_l[l_to_l[elem] != 0]
+    #     l_to_r = l_to_r[l_to_r[elem] != 0]
+    #     r_to_l = r_to_l[r_to_l[elem] != 0]
+    #     r_to_r = r_to_r[r_to_r[elem] != 0]
+
     figure(num=None, figsize=(20, 20), dpi=150)
     plt.subplot(4, 1, 1)
     plt.hist(df[elem], bins=25, color="#8968CB")
